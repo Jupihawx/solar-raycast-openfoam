@@ -1,5 +1,7 @@
 # solar-raycast-openfoam
 
+![Incident solar flux per wall face, TU Delft campus, sun from the south-west at 51°](docs/images/solar_qIncident.png)
+
 Per-face **solar irradiance** on the wall patches of an OpenFOAM mesh (ground and buildings), by ray
 casting: direct sun with shadows, diffuse sky through the sky view factor, and two diffuse
 inter-reflection bounces. The result goes into a buoyant OpenFOAM run as a **sol-air temperature
@@ -40,6 +42,8 @@ it, with uniform values per patch.
 
 Built-in check: open flat ground should read `qIncident ≈ DNI·sin(elevation) + DHI`, printed as
 "reference GHI".
+
+![Sky view factor per wall face: courtyards and narrow streets see less sky](docs/images/solar_skyViewFactor.png)
 
 ## Conventions
 
