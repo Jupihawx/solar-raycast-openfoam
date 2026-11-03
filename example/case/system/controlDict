@@ -1,0 +1,51 @@
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      controlDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+libs            (atmosphericModels);   // atmBoundaryLayerInlet*, atm*WallFunction
+
+application     buoyantSimpleFoam;
+startFrom       latestTime;
+startTime       0;
+stopAt          endTime;
+endTime         1000;
+deltaT          1;
+writeControl    timeStep;
+writeInterval   250;
+purgeWrite      0;
+writeFormat     binary;
+writePrecision  8;
+writeCompression off;
+timeFormat      general;
+timePrecision   8;
+runTimeModifiable yes;
+
+functions
+{
+    probes
+    {
+        type            probes;
+        libs            (sampling);
+        writeControl    timeStep;
+        writeInterval   1;
+        fields          (U T k);
+        probeLocations
+        (
+            (-800 -800 10)    // upstream (wind from 225 deg), 10 m
+            (0 0 100)         // above the site, 100 m
+        );
+    }
+    wallHeatFlux
+    {
+        type            wallHeatFlux;     // should approach qSolarSensible - h*(Tw - Tair)
+        libs            (fieldFunctionObjects);
+        patches         (Terrain Buildings);
+        writeControl    writeTime;
+    }
+}
+// ************************************************************************* //

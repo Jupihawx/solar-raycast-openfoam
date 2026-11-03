@@ -1,0 +1,28 @@
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      turbulenceProperties;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+simulationType RAS;
+
+RAS
+{
+    // kEpsilon + buoyancy production of k (heated still pockets generate their own turbulence)
+    RASModel            buoyantKEpsilon;
+    turbulence          on;
+    printCoeffs         on;
+    kMin                1e-3;   // floor on k: keeps wall-function heat transport alive in dead-air cells
+    buoyantKEpsilonCoeffs
+    {
+        Cmu         0.09;
+        C1          1.44;
+        C2          1.92;
+        sigmaEps    1.11;   // Hargreaves & Wright (2007)
+        Cg          1.0;    // buoyancy production coefficient (default)
+    }
+}
+// ************************************************************************* //

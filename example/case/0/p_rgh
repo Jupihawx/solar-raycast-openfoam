@@ -1,0 +1,31 @@
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       volScalarField;
+    object      p_rgh;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+#include        "include/ABLConditions"
+
+dimensions      [1 -1 -2 0 0 0 0];
+internalField   uniform $pressure;
+
+boundaryField
+{
+    outlet
+    {
+        type            fixedValue;       // p_rgh = p - rho*g*h fixed: hydrostatic p at the outlet
+        value           uniform $pressure; // (prghPressure with uniform p gave no hydrostatic gradient)
+    }
+    "(sides|top)"
+    {
+        type            symmetry;
+    }
+    "(inlet|Buildings|Terrain)"
+    {
+        type            fixedFluxPressure;
+        value           uniform $pressure;
+    }
+}
+// ************************************************************************* //

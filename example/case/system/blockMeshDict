@@ -1,0 +1,51 @@
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      blockMeshDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+// Rectangular domain in the WIND frame: x = downwind, y = crosswind, z = up, ground at z = 0,
+// centred on the geometry origin. Allrun.sh rotates it about z to the wind direction (dirFrom in
+// 0/include/ABLConditions) with transformPoints, so the inlet faces the wind. One mesh per direction.
+//
+// Example sizes, smaller than the COST 732 guideline (5 H upstream and to the sides, 15 H downstream,
+// 6 H high with H = 90 m) to keep the run short: fixed margins around the building area instead.
+
+Rb      1000;                       // buildings lie within Rb of the origin (any direction)
+up      300;                        // margin upstream and to the sides, m
+down    900;                        // margin downstream, m
+zMax    300;                        // domain height, m
+
+xMin    #eval{ -($Rb + $up) };      // inlet
+xMax    #eval{   $Rb + $down };     // outlet
+yMax    #eval{   $Rb + $up };       // sides at +-yMax
+zLow    120;                        // uniform 20 m cells up to here, graded above
+
+nx      160;                        // 20 m cells
+ny      130;
+nzLow   6;
+nzHigh  5;
+
+vertices
+(
+    ($xMin -$yMax 0) ($xMax -$yMax 0) ($xMax $yMax 0) ($xMin $yMax 0)
+    ($xMin -$yMax $zMax) ($xMax -$yMax $zMax) ($xMax $yMax $zMax) ($xMin $yMax $zMax)
+);
+
+blocks
+(
+    hex (0 1 2 3 4 5 6 7) ($nx $ny #eval{ $nzLow + $nzHigh })
+    simpleGrading (1 1 ((#eval{ $zLow/$zMax } $nzLow 1) (#eval{ 1 - $zLow/$zMax } $nzHigh 3)))
+);
+
+boundary
+(
+    inlet   { type patch;    faces ((0 4 7 3)); }
+    outlet  { type patch;    faces ((1 2 6 5)); }
+    sides   { type symmetry; faces ((0 1 5 4) (3 7 6 2)); }
+    top     { type symmetry; faces ((4 5 6 7)); }
+    Terrain { type wall;     faces ((0 3 2 1)); }
+);
+// ************************************************************************* //

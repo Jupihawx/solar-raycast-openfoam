@@ -1,0 +1,72 @@
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       volScalarField;
+    object      T;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+#include        "include/ABLConditions"
+
+dimensions      [0 0 0 1 0 0 0];
+internalField   uniform $Tair;
+
+// Solar heating with a sol-air surface energy balance (per face):
+//
+//     q_air = qSolar - h*(Tw - Tair)          [W/m2]
+//
+// qSolar = qSensible from solar_illumination.py; h = surface loss
+// coefficient (longwave + storage). As a mixed BC with refGradient 0:
+//     refValue      = Tsolair = Tair + qSolar/h   (per face, T_solar/<patch>.Tsolair)
+//     valueFraction = h/(h + kappaEff*deltaCoeff) (updated every iteration)
+// so Tw lies between the cell T and Tsolair. h must equal the H of --sol-air.
+solAir
+{
+    type            codedMixed;
+    refGradient     uniform 0;
+    valueFraction   uniform 0;
+    value           $internalField;
+
+    name            solAirMixed;
+    code
+    #{
+        const scalar h       = 10.0;        // W/m2/K, = H of --sol-air (Allrun.sh)
+        const scalar Cp      = 1005.0;      // J/kg/K   } as in
+        const scalar alphaLam = 1.86e-5/0.71; // mu/Pr  } thermophysicalProperties
+        const scalarField& alphat =
+            patch().lookupPatchField<volScalarField, scalar>("alphat");
+        const scalarField kappaEff(Cp*(alphaLam + max(alphat, scalar(0))));
+        this->refGrad() = 0.0;
+        this->valueFraction() = h/(h + kappaEff*patch().deltaCoeffs());
+    #};
+}
+
+boundaryField
+{
+    inlet
+    {
+        type            fixedValue;
+        value           uniform $Tair;
+    }
+    outlet
+    {
+        type            inletOutlet;
+        inletValue      uniform $Tair;
+        value           uniform $Tair;
+    }
+    "(sides|top)"
+    {
+        type            symmetry;
+    }
+    Terrain
+    {
+        $solAir;
+        refValue        #include "$FOAM_CASE/solarIllumination/T_solar/Terrain.Tsolair";
+    }
+    Buildings
+    {
+        $solAir;
+        refValue        #include "$FOAM_CASE/solarIllumination/T_solar/Buildings.Tsolair";
+    }
+}
+// ************************************************************************* //

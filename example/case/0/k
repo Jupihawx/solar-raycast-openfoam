@@ -1,0 +1,38 @@
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       volScalarField;
+    object      k;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+#include        "include/ABLConditions"
+
+dimensions      [0 2 -2 0 0 0 0];
+internalField   uniform $kInlet;
+
+boundaryField
+{
+    inlet
+    {
+        type            atmBoundaryLayerInletK;
+        #include        "include/ABLConditions"
+        value           uniform $kInlet;
+    }
+    outlet
+    {
+        type            inletOutlet;
+        inletValue      uniform $kInlet;
+        value           uniform $kInlet;
+    }
+    "(sides|top)"
+    {
+        type            symmetry;
+    }
+    "(Buildings|Terrain)"
+    {
+        type            kqRWallFunction;
+        value           uniform $kInlet;
+    }
+}
+// ************************************************************************* //

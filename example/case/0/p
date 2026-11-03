@@ -1,0 +1,28 @@
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       volScalarField;
+    object      p;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+#include        "include/ABLConditions"
+
+// Absolute pressure, computed from p_rgh by the solver
+
+dimensions      [1 -1 -2 0 0 0 0];
+internalField   uniform $pressure;
+
+boundaryField
+{
+    ".*"
+    {
+        type            calculated;
+        value           $internalField;
+    }
+    "(sides|top)"
+    {
+        type            symmetry;
+    }
+}
+// ************************************************************************* //

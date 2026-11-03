@@ -1,0 +1,45 @@
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      thermophysicalProperties;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+// Air with the Boussinesq equation of state: rho = rho0*(1 - beta*(T - T0))
+
+thermoType
+{
+    type            heRhoThermo;
+    mixture         pureMixture;
+    transport       const;
+    thermo          hConst;
+    equationOfState Boussinesq;
+    specie          specie;
+    energy          sensibleEnthalpy;
+}
+
+mixture
+{
+    specie
+    {
+        molWeight       28.96;
+    }
+    equationOfState
+    {
+        rho0            1.18;       // kg/m3 at T0
+        T0              298.15;     // K, = Tair in 0/include/ABLConditions
+        beta            3.35e-3;    // 1/K, = 1/T0
+    }
+    thermodynamics
+    {
+        Cp              1005;
+        Hf              0;
+    }
+    transport
+    {
+        mu              1.86e-05;
+        Pr              0.71;
+    }
+}
+// ************************************************************************* //

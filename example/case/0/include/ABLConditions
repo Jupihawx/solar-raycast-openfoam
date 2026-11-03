@@ -1,0 +1,34 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  Atmospheric boundary layer inflow, OpenFOAM v2412 (openfoam.com), atmosphericModels
+\*---------------------------------------------------------------------------*/
+// Example day (illustrative, not measured): 2023-06-21 14:00 UTC (16:00 CEST), TU Delft campus.
+//   wind 5 m/s at 100 m from 225 deg (south-west), T2m 25 C
+//   sun azimuth 235.3 deg, elevation 51.5 deg; clear sky DNI 750, DHI 130 W/m2 (used in Allrun.sh)
+// For a real day, take these from ERA5 (100 m wind, T2m, radiation) or a station.
+Uref                 5.0;		// Wind speed at Zref in m/s
+Zref                 100.0;		// Reference height in m (ERA5 100 m wind)
+dirFrom              225.0;		// Direction the wind blows FROM, deg clockwise from North
+zDir                 (0 0 1);
+z0In                 0.1;		// Inlet roughness, m (z0 repo inlet_z0_sectors.csv, 225 deg: 0.11 m)
+z0Buildings          0.05;		// Facade roughness, m (rough wall functions on Buildings)
+// Ground roughness: solarIllumination/T_solar/Terrain.z0 (per-face list, or "uniform 0.1"), see 0/nut
+d                    uniform 0.0;	// Displacement height
+Tair                 298.15;		// K, inflow and initial temperature (T2m); = TAIR of --sol-air
+
+kappa                0.41;
+Cmu                  0.09;
+pressure             1e5;		// Pa, absolute (compressible solver)
+
+/*				DERIVED, do not edit				    */
+z0                   uniform $z0In;
+dirRad               #calc "degToRad($dirFrom)";
+compX                #calc "-Foam::sin(scalar($dirRad))";	// blowing TOWARDS = from + 180
+compY                #calc "-Foam::cos(scalar($dirRad))";
+flowDir              ($compX $compY 0);
+uStar                #calc "( $Uref * $kappa ) / log(( $Zref + $z0In ) / $z0In )";
+kInlet               #calc "( $uStar * $uStar ) / sqrt( $Cmu )";
+epsilonInlet         #calc "pow($uStar, 3) / ( $kappa * ( $Zref + $z0In ))";
+UX                   #calc "$Uref * $compX";
+UY                   #calc "$Uref * $compY";
+Uvector              ($UX $UY 0);
+// ************************************************************************* //

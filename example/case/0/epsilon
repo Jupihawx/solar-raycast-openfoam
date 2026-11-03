@@ -1,0 +1,45 @@
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       volScalarField;
+    object      epsilon;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+#include        "include/ABLConditions"
+
+dimensions      [0 2 -3 0 0 0 0];
+internalField   uniform $epsilonInlet;
+
+boundaryField
+{
+    inlet
+    {
+        type            atmBoundaryLayerInletEpsilon;
+        #include        "include/ABLConditions"
+        value           uniform $epsilonInlet;
+    }
+    outlet
+    {
+        type            inletOutlet;
+        inletValue      uniform $epsilonInlet;
+        value           uniform $epsilonInlet;
+    }
+    "(sides|top)"
+    {
+        type            symmetry;
+    }
+    Terrain
+    {
+        type            atmEpsilonWallFunction;
+        z0              #include "$FOAM_CASE/solarIllumination/T_solar/Terrain.z0";   // same list as 0/nut
+        value           uniform $epsilonInlet;
+    }
+    Buildings
+    {
+        type            atmEpsilonWallFunction;
+        z0              uniform $z0Buildings;
+        value           uniform $epsilonInlet;
+    }
+}
+// ************************************************************************* //

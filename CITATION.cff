@@ -1,0 +1,16 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "solar-raycast-openfoam: per-face solar irradiance by ray casting and a sol-air boundary condition for OpenFOAM"
+type: software
+authors:
+  - alias: "JupiHawx"
+license: MIT
+version: "0.1.0"
+date-released: "2026-11-03"
+repository-code: "https://github.com/Jupihawx/solar-raycast-openfoam"
+keywords:
+  - OpenFOAM
+  - solar radiation
+  - ray casting
+  - sol-air temperature
+  - urban microclimate

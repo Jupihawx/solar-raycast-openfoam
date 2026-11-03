@@ -1,0 +1,52 @@
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      fvSchemes;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+ddtSchemes
+{
+    default         steadyState;
+}
+
+gradSchemes
+{
+    default         cellLimited Gauss linear 1;
+}
+
+divSchemes
+{
+    default         none;
+    // 1st order for now (start-up); 2nd order: limitedLinear 1 / linearUpwindV limited
+    turbulence      bounded Gauss upwind;
+    div(phi,U)      bounded Gauss upwind;
+    div(phi,h)      $turbulence;
+    div(phi,K)      bounded Gauss upwind;
+    div(phi,k)      $turbulence;
+    div(phi,epsilon) $turbulence;
+    div(((rho*nuEff)*dev2(T(grad(U))))) Gauss linear;
+}
+
+laplacianSchemes
+{
+    default         Gauss linear limited 0.5;   // max non-ortho 65
+}
+
+interpolationSchemes
+{
+    default         linear;
+}
+
+snGradSchemes
+{
+    default         limited 0.5;
+}
+
+wallDist
+{
+    method          meshWave;
+}
+// ************************************************************************* //

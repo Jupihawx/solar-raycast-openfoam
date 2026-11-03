@@ -1,0 +1,12 @@
+# solar_illumination.py
+# open3d lags new Python releases: tested with open3d 0.20.0 on Python 3.12 (see README "Install")
+numpy
+scipy
+pyvista
+open3d
+# example/clean_stl.py
+trimesh
+# Z0_REPO in the example (make_z0.py of z0-worldcover-openfoam)
+matplotlib
+rasterio
+pyproj

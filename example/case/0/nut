@@ -1,0 +1,42 @@
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       volScalarField;
+    object      nut;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+#include        "include/ABLConditions"
+
+dimensions      [0 2 -1 0 0 0 0];
+internalField   uniform 0;
+
+boundaryField
+{
+    "(inlet|outlet)"
+    {
+        type            calculated;
+        value           uniform 0;
+    }
+    "(sides|top)"
+    {
+        type            symmetry;
+    }
+    Terrain
+    {
+        type            atmNutkWallFunction;
+        // per-face z0 from --material-map (polyMesh face order), or "uniform 0.1" without a map.
+        // In parallel run decompose_z0.py (z0 repo) after decomposePar: v2412 does not split this list.
+        z0              #include "$FOAM_CASE/solarIllumination/T_solar/Terrain.z0";
+        boundNut        true;   // clip negative nut in stagnant cells
+        value           uniform 0;
+    }
+    Buildings
+    {
+        type            atmNutkWallFunction;    // rough: stays turbulent at low y+ (smooth one gave nut = 0)
+        z0              uniform $z0Buildings;
+        boundNut        true;
+        value           uniform 0;
+    }
+}
+// ************************************************************************* //

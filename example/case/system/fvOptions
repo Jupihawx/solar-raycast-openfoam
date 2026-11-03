@@ -1,0 +1,29 @@
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      fvOptions;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+// Clip T during the start-up transient (uniform field, nut = 0 at walls, full solar flux).
+// Should be inactive once converged: check that min/max T stay inside the limits.
+limitT
+{
+    type            limitTemperature;
+    active          yes;
+    selectionMode   all;
+    min             293;    // K
+    max             343;    // K (70 C)
+}
+
+// Cap U during the start-up transient: near-closed pockets between buildings blow up
+// in the first iterations on the canopy mesh. Should report "damped 0" once settled.
+limitU
+{
+    type            velocityDampingConstraint;
+    selectionMode   all;
+    UMax            20;
+}
+// ************************************************************************* //

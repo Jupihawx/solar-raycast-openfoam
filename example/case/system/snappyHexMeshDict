@@ -1,0 +1,167 @@
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      snappyHexMeshDict;
+}
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+// Mesh: blockMesh 20 m cells, then
+//   - the WHOLE ground refined to one level (10 m cells, first cell 10 m tall everywhere): wall-function
+//     results (nut, wall shear, heat flux) have no jump from refinement boxes
+//   - buildings refined to 2.5 m on their surfaces, 5 m within 10 m of them
+// No refinement boxes.
+
+// Which of the steps to run
+castellatedMesh true;		// Only break the mesh into approx. voxels
+snap            true;		// Snap the points to the geometry after approx. voxel
+addLayers       false;		// Add boundary layer mesh close to the wall
+
+
+// Geometry details and refinement
+geometry
+{
+    // Flat plate at z = 0 over the whole domain, only for distance refinement of the blockMesh patch
+    // "Terrain". Must cover the rotated box (corner ~2300 m from the centre here).
+    Ground
+    {
+        type   searchablePlate;
+        origin (-2500 -2500 0);
+        span   (5000 5000 0);
+    }
+
+    // Ground is the blockMesh patch "Terrain" (z0 from WorldCover), no terrain/vegetation STL
+    Buildings
+    {
+        file "Buildings.stl";
+        type triSurfaceMesh;
+    }
+};
+
+
+// Settings for the castellatedMesh generation.
+castellatedMeshControls
+{
+
+    maxLocalCells 5000000;
+    maxGlobalCells 20000000;
+    minRefinementCells 0;
+    maxLoadUnbalance 0.10;
+    nCellsBetweenLevels 2;
+
+    // This is feature edges for the geometry at hand
+    features
+    (
+        {
+                file "Buildings.eMesh";
+                level 2;
+        }
+
+    );
+
+    refinementSurfaces
+    {
+        Buildings
+        {
+            level (3 3);	// 2.5 m cells on the buildings (20 m base cells)
+            patchInfo
+            {
+                type wall;
+            }
+        }
+    }
+
+    resolveFeatureAngle 30;	// Any angle greater than 30 degrees will be refined and resolved
+
+    refinementRegions
+    {
+        // Whole ground to level 1. Distances are to cell CENTRES: a cell is refined if its centre is
+        // closer than the distance. Block cells 20 m tall (centre 10 m) -> 12 m gives level 1
+        // (10 m tall, centre 5 m). For 5 m ground cells use ((6.0 2) (12.0 1)): ~4x more ground cells.
+        Ground
+        {
+            mode distance;
+            levels ((12.0 1));
+        }
+
+        // Air around the buildings
+        Buildings
+        {
+            mode distance;
+            levels ((10.0 2));
+        }
+    }
+
+    locationInMesh (-150.13 150.17 200.11);   // in the air, above the buildings (max 90 m), below the top (300 m)
+    allowFreeStandingZoneFaces true;
+}
+
+// Settings for the snapping.
+snapControls
+{
+    nSmoothPatch 3;
+    tolerance 4.0;
+    nSolveIter 30;
+    nRelaxIter 5;
+    nFeatureSnapIter 5;          // extruded footprints: simple edges, few iterations suffice
+    implicitFeatureSnap false;
+    explicitFeatureSnap true;
+    multiRegionFeatureSnap false;
+}
+
+// Settings for the layer addition.
+addLayersControls
+{
+    relativeSizes true;
+    expansionRatio 1.2;
+    firstLayerThickness 0.4;
+    minThickness 0.4;
+    layers{}
+    nGrow 0;
+    featureAngle 130;
+    maxFaceThicknessRatio 0.5;
+    nSmoothSurfaceNormals 1;
+    nSmoothThickness 10;
+    minMedialAxisAngle 90;
+    maxThicknessToMedialRatio 0.3;
+    nSmoothNormals 3;
+    slipFeatureAngle 30;
+    nRelaxIter 5;
+    nBufferCellsNoExtrude 0;
+    nLayerIter 50;
+    nRelaxedIter 20;
+}
+
+
+// Generic mesh quality settings. At any undoable phase these determine
+// where to undo.
+meshQualityControls
+{
+    maxNonOrtho 65;
+    maxBoundarySkewness 5;
+    maxInternalSkewness 4;
+    maxConcave 80;
+    minVol 1e-13;
+    minTetQuality 1e-30;
+    minArea -1;
+    minTwist 0.05;
+    minDeterminant 0.001;
+    minFaceWeight 0.05;
+    minVolRatio 0.01;
+    minTriangleTwist -1;
+    minVolCollapseRatio 0.5;
+    nSmoothScale 4;
+    errorReduction 0.75;
+    relaxed
+    {
+        maxNonOrtho 75;
+    }
+}
+
+
+// Advanced
+mergeTolerance 1e-6;
+
+
+// ************************************************************************* //
