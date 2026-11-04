@@ -1,7 +1,7 @@
 {
   "lat0": 52.000825,
   "lon0": 4.377,
-  "source": "OpenStreetMap buildings imported with Blender + Blosm (extent lon 4.36745-4.38655, lat 51.99439-52.00726; origin = centre of the extent), cleaned by hand; solids with a footprint under 25 m2, flat sheets and one unsupported part removed",
+  "source": "OpenStreetMap buildings (extent lon 4.36745-4.38655, lat 51.99439-52.00726; origin = centre of the extent), cleaned: solids with a footprint under 25 m2, flat sheets and broken triangles removed",
   "max_height_m": 90.0,
   "attribution": "Building data (c) OpenStreetMap contributors, ODbL 1.0, https://www.openstreetmap.org/copyright"
 }

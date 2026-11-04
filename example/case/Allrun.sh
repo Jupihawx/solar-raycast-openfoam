@@ -1,6 +1,6 @@
 #!/bin/bash
-# TU Delft example, solar ray casting (+ optional buoyant run), OpenFOAM v2412 (openfoam.com):
-#   geo/Buildings.stl (OSM via Blosm) -> blockMesh + snappyHexMesh -> [z0/albedo map from z0-worldcover-openfoam]
+# TU Delft example, solar ray casting (+ optional buoyant run), OpenFOAM (openfoam.com, tested v2412/v2606):
+#   geo/Buildings.stl (OSM buildings) -> blockMesh + snappyHexMesh -> [z0/albedo map from z0-worldcover-openfoam]
 #   -> solar_illumination.py -> [buoyantSimpleFoam with the sol-air BC]
 #
 # Usage:  bash Allrun.sh            (source OpenFOAM's etc/bashrc first)

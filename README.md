@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/images/logo.png" width="480" alt="solar-raycast-openfoam logo"></p>
+
 # solar-raycast-openfoam
 
 ![Incident solar flux per wall face, TU Delft campus, sun from the south-west at 51°](docs/images/solar_qIncident.png)
@@ -11,9 +13,9 @@ For ground albedo, sensible fraction and roughness per face from ESA WorldCover,
 [z0-worldcover-openfoam](https://github.com/Jupihawx/z0-worldcover-openfoam). This tool also runs without
 it, with uniform values per patch.
 
-- OpenFOAM **v2412** (openfoam.com / ESI) for the boundary conditions and the example case. The Foundation
-  version (openfoam.org) differs (BC names, `atmosphericModels`). The ray casting itself only reads the
-  mesh. The example was also run on v2606.
+- OpenFOAM: the ray casting is plain Python and only reads the mesh, so it works with any version.
+  The boundary condition and the example case were tested with v2412 and v2606 (openfoam.com); other
+  versions (e.g. openfoam.org) may need changes to them.
 - Python 3.10–3.12 (open3d has no wheels for newer Python yet, see [Install](#install)).
 - Status: the tool runs and the sol-air BC is stable (300+ iterations on 34 M cells, and the example).
   It is **not a validated microclimate model**: no longwave exchange between surfaces, no thermal mass,
@@ -23,7 +25,6 @@ it, with uniform values per patch.
 |---|---|
 | `solar_illumination.py` | Ray casting (Open3D/Embree), writes `illumination.vtp` and the per-face `Tsolair` / `z0` lists |
 | `example/` | TU Delft campus (OSM buildings, STL included): ray casting + optional `buoyantSimpleFoam` |
-| `docs/pitfalls.md` | What went wrong on the way (wall functions, pressure BC, z0 decomposition, ...) |
 
 ---
 
@@ -34,8 +35,9 @@ it, with uniform values per patch.
 3. **Direct:** one shadow ray per face toward the sun: `qDirect = DNI·cos θ` if not shadowed.
 4. **Hemisphere:** N cosine-weighted rays per face, cast **once**. Each ray records sky, below-horizon or
    the face it hit. Sky view factor → `qSky = DHI·SVF`.
-5. **Bounces 1 and 2:** table lookups on the stored hits (`albedo·E` of the hit face). No new rays;
-   equivalent to two Jacobi iterations of Monte-Carlo radiosity.
+5. **Bounces 1 and 2:** the light reflected by each face (albedo × what it receives) is passed on to the
+   faces its rays hit, reusing the rays of step 4. This is done twice (1st and 2nd reflection); further
+   reflections are small (albedo 0.1–0.3 per bounce) and ignored.
 6. `qIncident = qDirect + qSky + qBounce1 + qBounce2`, `qAbsorbed = (1 − albedo)·qIncident`,
    `qSensible = sensibleFraction·qAbsorbed` (the part that heats the air; the rest goes to evaporation
    and storage).
@@ -71,13 +73,27 @@ works the same way.
 
 ## Quickstart
 
+Run in a meshed case (`constant/polyMesh` or `<time>/polyMesh`). Run **one** of the two commands:
+A if you have not run the z0 repository, B if you have.
+
+**A. Without the [z0 repository](https://github.com/Jupihawx/z0-worldcover-openfoam)** (uniform ground):
+
 ```bash
-cd <case>                               # meshed: constant/polyMesh or <time>/polyMesh
 python solar_illumination.py . --patches Terrain Buildings \
     --sun-azimuth 235.3 --sun-elevation 51.5 --dni 750 --dhi 130 \
     --albedo Terrain=0.20 --sensible-fraction Terrain=0.7 \
     --albedo Buildings=0.30 --sensible-fraction Buildings=1.0 \
-    --sol-air 10 298.15 --samples 256
+    --sol-air 10 298.15
+```
+
+**B. After `make_z0.py` of the [z0 repository](https://github.com/Jupihawx/z0-worldcover-openfoam)** (ground albedo, sensible fraction and z0 per face):
+
+```bash
+python solar_illumination.py . --patches Terrain Buildings \
+    --sun-azimuth 235.3 --sun-elevation 51.5 --dni 750 --dhi 130 \
+    --material-map Terrain=constant/boundaryData/Terrain \
+    --albedo Buildings=0.30 --sensible-fraction Buildings=1.0 \
+    --sol-air 10 298.15
 ```
 
 Run with `--samples 64` first to check the setup, then 256–512. Open
@@ -88,16 +104,15 @@ must read the reference GHI.
 
 `make_z0.py` of [z0-worldcover-openfoam](https://github.com/Jupihawx/z0-worldcover-openfoam) writes, next to
 z0, `albedo` and `sensibleFraction` per point in `constant/boundaryData/Terrain/0/` (WorldCover class
-table). Pass the folder:
-
-```bash
-python solar_illumination.py . ... --material-map Terrain=constant/boundaryData/Terrain
-```
-
-Each ground face takes the nearest map point. If the folder also holds `0/z0`, the tool writes it as a
+table); command B above passes that folder. Each ground face takes the nearest map point. If the folder also holds `0/z0`, the tool writes it as a
 per-face list `solarIllumination/T_solar/Terrain.z0`, in the same face order, for the wall functions.
 Patches without a map keep `--albedo` / `--sensible-fraction`. Without any map the tool uses uniform
 values (default albedo 0.2, sensible fraction 1.0).
+
+The values can be changed: per patch with `--albedo P=V` and `--sensible-fraction P=V` on the command
+line (e.g. lighter facades: `--albedo Buildings=0.45`); per land-cover class in the `SURFACE` table at
+the top of `make_z0.py` in the z0 repository (e.g. brighter, wetter lawns: `30: (0.25, 0.4)` for grassland albedo
+0.25, sensible fraction 0.4), then rerun `make_z0.py` and this tool.
 
 ## Outputs (`<case>/solarIllumination/`)
 
@@ -125,33 +140,8 @@ reference (2 m air temperature), not the local air. As a mixed BC with `refGradi
 
 The wall temperature then always lies between the cell temperature and `Tsolair`: it cannot run away.
 
-```
-// 0/T (as in example/case/0/T)
-solAir
-{
-    type            codedMixed;
-    refGradient     uniform 0;
-    valueFraction   uniform 0;
-    value           $internalField;
-    name            solAirMixed;
-    code
-    #{
-        const scalar h        = 10.0;            // = H of --sol-air
-        const scalar Cp       = 1005.0;          // as in thermophysicalProperties
-        const scalar alphaLam = 1.86e-5/0.71;    // mu/Pr
-        const scalarField& alphat =
-            patch().lookupPatchField<volScalarField, scalar>("alphat");
-        const scalarField kappaEff(Cp*(alphaLam + max(alphat, scalar(0))));
-        this->refGrad() = 0.0;
-        this->valueFraction() = h/(h + kappaEff*patch().deltaCoeffs());
-    #};
-}
-boundaryField
-{
-    Terrain   { $solAir; refValue #include "$FOAM_CASE/solarIllumination/T_solar/Terrain.Tsolair"; }
-    Buildings { $solAir; refValue #include "$FOAM_CASE/solarIllumination/T_solar/Buildings.Tsolair"; }
-}
-```
+The complete boundary condition (the `codedMixed` code and how `Terrain` / `Buildings` read their
+`Tsolair` lists) is in [`example/case/0/T`](example/case/0/T); copy it into your case.
 
 - `h` in `0/T` **must equal** `H` of `--sol-air H TAIR`, and `TAIR` should equal the inflow `Tair`.
 - Needs a compressible thermo solver (`buoyantSimpleFoam`, `buoyantPimpleFoam`) that registers `alphat`.
@@ -159,7 +149,6 @@ boundaryField
 - `decomposePar` splits `refValue` correctly. The z0 lists of the atm wall functions it does **not**
   split in v2412: run `tools/decompose_z0.py` of the z0 repository with
   `--list "solarIllumination/T_solar/{patch}.z0"` after `decomposePar`.
-- An exact T⁴ longwave version is possible but not implemented.
 
 ## Options
 
@@ -180,9 +169,10 @@ boundaryField
 
 ## RAM and runtime
 
-The hit table is `faces × samples × 4 bytes`:
+The hit table (which face each ray hits) is held in RAM during the run, `faces × samples × 4 bytes`;
+it is not written to disk:
 
-| Wall faces | Samples | Hit table | Runtime (measured) |
+| Wall faces | Samples | Hit table (RAM) | Runtime (measured) |
 |---|---|---|---|
 | 181 k | 256 | 0.19 GB | ~5 s |
 | 5.5 M | 256 | 5.6 GB | ~2 min |

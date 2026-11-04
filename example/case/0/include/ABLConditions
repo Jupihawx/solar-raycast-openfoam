@@ -1,5 +1,5 @@
 /*--------------------------------*- C++ -*----------------------------------*\
-  Atmospheric boundary layer inflow, OpenFOAM v2412 (openfoam.com), atmosphericModels
+  Atmospheric boundary layer inflow, OpenFOAM (openfoam.com), atmosphericModels
 \*---------------------------------------------------------------------------*/
 // Example day (illustrative, not measured): 2023-06-21 14:00 UTC (16:00 CEST), TU Delft campus.
 //   wind 5 m/s at 100 m from 225 deg (south-west), T2m 25 C

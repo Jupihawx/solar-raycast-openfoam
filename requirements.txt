@@ -4,8 +4,6 @@ numpy
 scipy
 pyvista
 open3d
-# example/clean_stl.py
-trimesh
 # Z0_REPO in the example (make_z0.py of z0-worldcover-openfoam)
 matplotlib
 rasterio

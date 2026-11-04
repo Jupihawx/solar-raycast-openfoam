@@ -5,7 +5,7 @@ TU Delft campus and the housing to its east, ~1.3 km × 1.3 km of buildings, ori
 
 | | |
 |---|---|
-| Geometry | `geo/Buildings.stl`, shipped: OSM buildings imported with Blender + Blosm, some removed by hand, then `../clean_stl.py` (solids under 25 m² footprint and broken triangles removed). 406 solids, tallest 90 m (EWI) |
+| Geometry | `geo/Buildings.stl`, shipped: OSM buildings, cleaned (small sheds and broken triangles removed). 406 solids, tallest 90 m (EWI) |
 | Domain | box aligned with the wind: buildings within 1000 m of the origin, plus 300 m upstream and to the sides, 900 m downstream, 300 m high. **Smaller than the COST 732 guideline** to keep the example short |
 | Mesh | blockMesh 20 m cells, rotated to `dirFrom` with `transformPoints`. snappyHexMesh: the whole ground at 10 m (no refinement boxes), 5 m within 10 m of buildings, 2.5 m on building surfaces. 855 k cells |
 | Sun | 2023-06-21 14:00 UTC: azimuth 235.3°, elevation 51.5°; clear sky DNI 750, DHI 130 W/m² (illustrative) |
@@ -17,7 +17,7 @@ TU Delft campus and the housing to its east, ~1.3 km × 1.3 km of buildings, ori
 
 Linux or WSL2 (Ubuntu). Commands start in the repository root.
 
-**1. OpenFOAM v2412 (openfoam.com).** Install it from <https://develop.openfoam.com/Development/openfoam/-/wikis/precompiled>
+**1. OpenFOAM (openfoam.com; tested with v2412 and v2606).** Install it from <https://develop.openfoam.com/Development/openfoam/-/wikis/precompiled>
 (Ubuntu: `apt` package `openfoam2412-default`), then load it in every new shell:
 
 ```bash
@@ -73,8 +73,8 @@ touch case.foam          # ParaView: latest time, patches Terrain and Buildings
 
 See [Check](#check) below. `bash Allclean.sh` removes everything generated (keeps `geo/Buildings.stl` and `geo/site.json`).
 
-To use your own site, see "Your own site" in the z0 repository's `example/README.md` (Blosm export,
-`clean_stl.py`, `site.json`, domain size).
+To use your own site, see "Your own site" in the z0 repository's `example/README.md` (geometry,
+`site.json`, domain size).
 
 ## Runtime (measured)
 
@@ -84,7 +84,7 @@ To use your own site, see "Your own site" in the z0 repository's `example/README
 |---|---|
 | blockMesh + rotate + snappyHexMesh (serial) | ~2.5 min, 855 k cells |
 | z0 map (`make_z0.py`) | ~3 s |
-| Ray casting, 243 k wall faces × 256 samples (62 M rays) | ~20 s, hit table 0.25 GB |
+| Ray casting, 243 k wall faces × 256 samples (62 M rays) | ~20 s, hit table 0.25 GB of RAM; `illumination.vtp` 13 MB on disk |
 | buoyantSimpleFoam, 1000 iterations | ~15 min (0.88 s per iteration) |
 | **Total** | **~18 min** (1066 s); without `BUOYANT=1` about 3 min |
 
